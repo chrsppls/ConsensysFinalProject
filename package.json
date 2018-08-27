@@ -1,0 +1,30 @@
+{
+  "name": "FinalProject",
+  "version": "1.0.0",
+  "description": "",
+  "main": "truffle.js",
+  "directories": {
+    "test": "test"
+  },
+  "dependencies": {
+    "express": "^4.16.3"
+  },
+  "devDependencies": {
+    "lite-server": "^2.4.0"
+  },
+  "scripts": {
+    "dev": "lite-server",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrsppls/ConsensysFinalProject.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chrsppls/ConsensysFinalProject/issues"
+  },
+  "homepage": "https://github.com/chrsppls/ConsensysFinalProject#readme"
+}
