@@ -38,6 +38,7 @@ App = {
     });
   },
 
+  // init function
   initContract: function() {
     $.getJSON('InvestmentScreen.json', function(investmentScreenArtifact) {
       // get the contract artifact file and use it to instantiate a truffle contract abstraction
@@ -51,6 +52,7 @@ App = {
     });
   },
 
+  // refresh the UI after activity
   reloadOpportunities: function() {
     // avoid reentry
     if(App.loading == true) {
@@ -68,17 +70,13 @@ App = {
       investmentScreenInstance = instance;
       return instance.getAvailableOpportunities();
     }).then(function(opportunityIds) {
-      // retrieve the opportunity placeholder and clear it
+
       $('#opportunityRow').empty();
-      // console.log('Right here this is opportunityIds before the loop ' + opportunityIds);
 
       for (var i = 0; i < opportunityIds.length; i++) {
-        // console.log("this is the length in the loop " + opportunityIds.length);
-        // console.log("i in the loop " + i);
         opportunityId = opportunityIds[i];
-        // console.log('this is opportunityIds ' + opportunityId);
-        investmentScreenInstance.opportunities(opportunityId.toNumber()).then(function(opportunity){
-          console.log(opportunity[7]);
+          investmentScreenInstance.opportunities(opportunityId.toNumber()).then(function(opportunity){
+
           App.displayOpportunity(opportunity[0], opportunity[1], opportunity[4], opportunity[5], opportunity[6], opportunity[3], opportunity[8], opportunity[9], opportunity[10], opportunity[11]);
         });
       }
@@ -91,11 +89,13 @@ App = {
     });
   },
 
-  displayOpportunity: function(id, seller, name, description, price, status, investor, endorsement1, endorsement2, endorsement3) {
+  // function to display items in interface on reload
+  displayOpportunity: function(id, investee, name, description, price, status, investor, endorsement1, endorsement2, endorsement3) {
     var opportunityRow = $('#opportunityRow');
-    console.log('This is the price ' + endorsement1);
     var etherPrice = web3.fromWei(price,"ether");
     var opportunityTemplate = $('#opportunityTemplate');
+
+    // update UI
     opportunityTemplate.find('.panel-title').text(name);
     opportunityTemplate.find('.opportunity-description').text(description);
     opportunityTemplate.find('.opportunity-price').text(etherPrice + " ETH");
@@ -108,13 +108,13 @@ App = {
     opportunityTemplate.find('.btn-rank').attr('data-id', id);
     opportunityTemplate.find('.btn-fund').attr('data-value',etherPrice);
 
-    // check the sellers
-    if(seller == App.account) {
-      opportunityTemplate.find('.opportunity-seller').text("You");
+    // check the accounts and update button displays/options
+    if(investee == App.account) {
+      opportunityTemplate.find('.opportunity-investee').text("You");
       opportunityTemplate.find('.btn-fund').hide();
       opportunityTemplate.find('.btn-rank').hide();
     } else {
-      opportunityTemplate.find('.opportunity-seller').text(seller);
+      opportunityTemplate.find('.opportunity-investee').text(investee);
       opportunityTemplate.find('.btn-fund').hide();
       opportunityTemplate.find('.btn-rank').hide();
       if (status == "Investment needs additional screening" && endorsement1 != App.account && endorsement2 != App.account) {
@@ -130,6 +130,7 @@ App = {
 
   },
 
+  // function for creating a new opportunity
   createOpportunity: function() {
     // retrieve the detail of the opportunity
     var _opportunity_name = $('#opportunity_name').val();
@@ -153,15 +154,22 @@ App = {
     });
   },
 
+  // function to endorse an opportunity
   endorseOpportunity: function() {
     // retrieve the detail of the opportunity
-    // var _opportunityNumber = 1;
-    var current = $('.btn-rank').data('id');
+    event.preventDefault();
 
-    console.log("This is the value of current " + current);
+    // Retrieve the opportunity fundingTarget
+    var _opportunityId = $(event.target).data('id');
+
+    console.log("This is the opportunity Id " + _opportunityId);
+
+    // var current = $('.btn-rank').data('id');
+
+    // console.log("This is the value of current " + current);
 
     App.contracts.InvestmentScreen.deployed().then(function(instance) {
-      return instance.assessOpportunity(current, {
+      return instance.assessOpportunity(_opportunityId, {
         from: App.account,
         gas: 500000
       });
@@ -187,7 +195,7 @@ App = {
         App.reloadOpportunities();
       });
 
-      // opportunity has been endorsed
+      // Event opportunity has been endorsed
       instance.OpportunityEndorsed({}, {}).watch(function(error, event) {
         if(!error) {
           $('#events').append('<li class="list-group-item">' + event.args._screener + ' has endorsed ' + event.args._opportunityName + '!</li>');
@@ -198,7 +206,7 @@ App = {
         App.reloadOpportunities();
       });
 
-      // opportunity has been funded
+      // Event opportunity has been funded
       instance.OpportunityFunded({}, {}).watch(function(error, event) {
         if(!error) {
           $('#events').append('<li class="list-group-item">' + event.args._investor + ' has funded ' + event.args._opportunityName + '</li>');
@@ -213,7 +221,7 @@ App = {
   fundOpportunity: function() {
     event.preventDefault();
 
-    // Retrieve the opportunity Price
+    // Retrieve the opportunity fundingTarget
     var _opportunityId = $(event.target).data('id');
     var _fundingTarget = parseFloat($(event.target).data('value'));
 
