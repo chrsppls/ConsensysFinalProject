@@ -60,6 +60,11 @@ constructor() public {
   statusDescriptions[2] =   "Investment has been screened and has been funded";
 }
 
+// @dev deactivate the contracts
+function kill() public onlyOwner {
+    selfdestruct(owner);
+}
+
 // @dev event for creating an opportunity
 event OpportunitySnapshot(
     uint _opportunityId,
