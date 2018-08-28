@@ -1,16 +1,32 @@
 pragma solidity ^0.4.24;
 
+/**
+* @title InvestmentScreen
+* @dev contract serves to deploy, endorse and fund opportunities
+* including variables events and modifiers
+*/
+
 import "./SafeMath.sol";
 import "./Ownable.sol";
 
 contract InvestmentScreen is Ownable{
   using SafeMath for uint256;
 
-address owner;
-
+// @param opportuntiyNumber counter of the number of opportunities
 uint opportunityNumber;
 
-// Struct with investment characteristics
+// @dev Struct with investment characteristics
+// @param opportunityId Id number of opportunity
+// @param investee placer of investment opportunity
+// @param funded is the opportunity funded bool
+// @param status current status of the opportunity
+// @param opportunityName name of the opportunity
+// @param opportunityDescription description of the opportunity
+// @param fundingTarget how much funding is requested
+// @param screeners number of screeners for the opportunity
+// @param endorsement1 1st endorser
+// @param endorsement2 2nd endorser
+// @param endorsement3 3rd endorser
 struct InvestmentOpportunity{
   uint opportunityId;
   address investee;
@@ -26,14 +42,16 @@ struct InvestmentOpportunity{
   address endorsement3;
 }
 
-// mapping of available opportunities
+// @param mapping of available opportunities
 mapping (uint => InvestmentOpportunity) public opportunities;
 
+// @param investmentOpportunities array of investmentOpportunities
 InvestmentOpportunity[] public investmentOpportunities;
 
+// @param statusDescriptions new array to hold status descriptions
 string[] statusDescriptions = new string[] (3);
 
-// contract constuctor
+// @param contract constuctor
 constructor() public {
   owner = msg.sender;
   opportunityNumber = 0;
@@ -42,7 +60,7 @@ constructor() public {
   statusDescriptions[2] =   "Investment has been screened and has been funded";
 }
 
-// event for creating an opporunity
+// @dev event for creating an opportunity
 event OpportunitySnapshot(
     uint _opportunityId,
     address _investee,
@@ -58,13 +76,21 @@ event OpportunitySnapshot(
     address _endorsement3
     );
 
-// event for endorsing an opportunity
+// @dev event for endorsing an opportunity
 event OpportunityEndorsed(
   address _screener,
   string _opportunityName
   );
 
-// event for funding an event
+// @dev second log emitted during endorsemnt for testing purposes only
+event CurrentStatus(
+  address _endorsement1,
+  address _endorsement2,
+  address _endorsement3,
+  string _status
+  );
+
+// @dev event for funding an event
 event OpportunityFunded(
   uint _opportunityId,
   address _investee,
@@ -72,32 +98,33 @@ event OpportunityFunded(
   string _opportunityName,
   uint _fundingTarget);
 
+// @dev function to create a new opportunity
 function createOpportunity(
   string _opportunityName,
   string _opportunityDescription,
   uint _fundingTarget
   ) public {
-    // update the opporuntiy count variable
+    // @dev update the opportunity count variable
     opportunityNumber++;
 
-    // add an opportunity
+    // @dev add an opportunity
     string storage status = statusDescriptions[0];
     opportunities[opportunityNumber] = InvestmentOpportunity(
-      /* opportunityId: */ opportunityNumber,
-      /* investee: */ msg.sender,
-      /* funded: */ false,
-      /* status: */ status,
-      /* opportunityName: */ _opportunityName,
-      /* opportunityDescription: */ _opportunityDescription,
-      /* fundingTarget: */ _fundingTarget,
-      /* screeners: */ 0,
-      /* investor: */ 0x0,
-      /* endorsement1: */ 0x0,
-      /* endorsement2: */ 0x0,
-      /* endorsement3: */ 0x0
+      /* @param opportunityId: */ opportunityNumber,
+      /* @param investee: */ msg.sender,
+      /* @param funded: */ false,
+      /* @param status: */ status,
+      /* @param opportunityName: */ _opportunityName,
+      /* @param opportunityDescription: */ _opportunityDescription,
+      /* @param fundingTarget: */ _fundingTarget,
+      /* @param screeners: */ 0,
+      /* @param investor: */ 0x0,
+      /* @param endorsement1: */ 0x0,
+      /* @param endorsement2: */ 0x0,
+      /* @param endorsement3: */ 0x0
       );
 
-  // Emit event for created opportunity
+  // @dev emit event for created opportunity
   emit OpportunitySnapshot(
     opportunities[opportunityNumber].opportunityId,
     msg.sender,
@@ -114,84 +141,87 @@ function createOpportunity(
     );
 }
 
-// get the number of active opportunities
+// @dev get the number of active opportunities
 function getNumberOfOpportunities()
 public view returns(uint){
   return opportunityNumber;
 }
 
+// @dev function to get available opportunities
 function getAvailableOpportunities() public view returns (uint[]) {
     //prepare output array
     uint[] memory opportunityIds = new uint[](opportunityNumber);
 
-    // prepare opporunity number variable
+    // @param numberOfAvailableOpportunities prepare opportunity number variable
     uint numberOfAvailableOpportunities = 0;
 
-    // get available opportunities
+    // @dev get available opportunities
     for(uint i = 1; i <= opportunityNumber; i++) {
         opportunityIds[numberOfAvailableOpportunities] = opportunities[i].opportunityId;
         numberOfAvailableOpportunities++;
     }
 
-    // copy the opportunityIds array into a smaller availableOpportunity array
+    // @dev copy the opportunityIds array into a smaller availableOpportunity array
     uint[] memory availableOpportunity = new uint[] (numberOfAvailableOpportunities);
     for(uint j = 0; j < numberOfAvailableOpportunities; j++) {
       availableOpportunity[j] = opportunityIds[j];
     }
 
+    // @dev return available opportunities
     return availableOpportunity;
   }
 
-// provide endorsements for the investment opportunities
+// @dev provide endorsements for the investment opportunities
 function assessOpportunity(uint _opportunityNumber) public{
-  //update the number of screeners
+  // @dev update the number of screeners
   opportunities[_opportunityNumber].screeners++;
 
   if(opportunities[_opportunityNumber].endorsement1 == 0x0) {
-    //add the first endorsement
+    // @dev add the first endorsement
     opportunities[_opportunityNumber].endorsement1 = msg.sender;
   } else if (opportunities[_opportunityNumber].endorsement2 == 0x0) {
-    // add the second endorsement
+    // @dev add the second endorsement
     opportunities[_opportunityNumber].endorsement2 = msg.sender;
   } else {
-    // add the third endorsement and set status to accept funding
+    // @dev add the third endorsement and set status to accept funding
     opportunities[_opportunityNumber].endorsement3 = msg.sender;
     string storage status = statusDescriptions[1];
     opportunities[_opportunityNumber].status = status;
   }
     emit OpportunityEndorsed(msg.sender, opportunities[_opportunityNumber].opportunityName);
+    emit CurrentStatus(opportunities[_opportunityNumber].endorsement1, opportunities[_opportunityNumber].endorsement2, opportunities[_opportunityNumber].endorsement3, opportunities[_opportunityNumber].status);
 }
 
-// fund an Opportunity
+// @dev fund an Opportunity
   function fundOpportunity(uint _opportunityId) payable public {
-    // Require that there is an Opportunity for sellArticle
+    // @dev require that there is an Opportunity for fundOpportunity
     require(opportunityNumber > 0);
 
-    // check that an Opportunity exists
+    // @dev check that an Opportunity exists
     require(_opportunityId > 0 && _opportunityId <= opportunityNumber);
 
-    // retrieve the Opportunity from the mapping
+    // @dev retrieve the Opportunity from the mapping
     InvestmentOpportunity storage opportunity = opportunities[_opportunityId];
 
-    // Check that the Opportunity has not been sold yet
+    // @dev check that the Opportunity has not been funded yet
     require(opportunity.investor == 0x0);
 
-    // don't allow seller to buy own items
+    // @dev don't allow seller to fund own items
     require(msg.sender != opportunity.investee);
 
-    // Check that the value sent is at least that of the Price
+    // @dev check that the value sent is at least that of the fundingTarget
     require(msg.value == opportunity.fundingTarget);
 
-    // keep the buyers information
+    // @dev keep the investors information
     opportunity.investor = msg.sender;
 
-    // the buyer can pay the _seller
+    // @dev the buyer can pay the _seller
     opportunity.investee.transfer(msg.value);
 
     string storage status = statusDescriptions[2];
     opportunity.status = status;
 
-    // log the event
+    // @dev log the event
     emit OpportunityFunded(_opportunityId, opportunity.investee, opportunity.investor, opportunity.opportunityName, opportunity.fundingTarget);
   }
 }
